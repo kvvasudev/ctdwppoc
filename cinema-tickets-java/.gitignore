@@ -1,0 +1,38 @@
+# Default ignored files
+/shelf/
+/workspace.xml
+
+.idea/
+*/target/
+.gradle
+/build/
+!gradle/wrapper/gradle-wrapper.jar
+*.class
+bin/main/application.yaml
+*.class
+**/target/
+**/.settings/
+**/.idea/
+**/*.class
+
+**/logs/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+
+### IntelliJ IDEA ###
+.idea
+/out
+*.iws
+*.iml
+*.ipr
+*.classpath
+*.project
+.m2/
+
+.DS_Store

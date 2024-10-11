@@ -8,7 +8,6 @@ import uk.gov.dwp.uc.pairtest.exception.InvalidPurchaseException;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static uk.gov.dwp.uc.pairtest.util.TicketUtil.*;
 
@@ -35,20 +34,24 @@ public class TicketServiceImpl implements TicketService {
     @Override
     public void purchaseTickets(Long accountId, TicketTypeRequest... ticketTypeRequests) throws InvalidPurchaseException {
 
-        List<TicketTypeRequest> ticketTypeRequestList = Arrays.stream(ticketTypeRequests).collect(Collectors.toList());
-        for(TicketRequestValidator ticketRequestValidator : ticketRequestValidators) {
-            ticketRequestValidator.validateTicketRequest(ticketTypeRequestList);
-        }
+        List<TicketTypeRequest> ticketTypeRequestList = Arrays.asList(ticketTypeRequests);
+        validateTicketRequests(ticketTypeRequestList);
 
-        int totalAmountToPay = calculateTicketAmount(ticketTypeRequestList);
+        int totalAmountToPay = calculateTotalCost(ticketTypeRequestList);
         ticketPaymentService.makePayment(accountId, totalAmountToPay);
 
-        int totalSeatsToAllocate = calculateTotalSeatsToAllocate(ticketTypeRequestList);
+        int totalSeatsToAllocate = calculateTotalSeats(ticketTypeRequestList);
         seatReservationService.reserveSeat(accountId, totalSeatsToAllocate);
 
     }
 
-    int calculateTotalSeatsToAllocate(List<TicketTypeRequest> ticketTypeRequestList) {
+    private void validateTicketRequests(List<TicketTypeRequest> requests) throws InvalidPurchaseException {
+        for (TicketRequestValidator validator : ticketRequestValidators) {
+            validator.validateTicketRequest(requests);
+        }
+    }
+
+    private int calculateTotalSeats(List<TicketTypeRequest> ticketTypeRequestList) {
 
         int adultTickets = getNumberOfTicketsByType(ticketTypeRequestList, TicketTypeRequest.Type.ADULT);
         int childTickets = getNumberOfTicketsByType(ticketTypeRequestList, TicketTypeRequest.Type.CHILD);
@@ -56,7 +59,7 @@ public class TicketServiceImpl implements TicketService {
         return adultTickets + childTickets ;
     }
 
-    int calculateTicketAmount(List<TicketTypeRequest> ticketTypeRequestList) {
+    private int calculateTotalCost(List<TicketTypeRequest> ticketTypeRequestList) {
 
         int adultTickets = getNumberOfTicketsByType(ticketTypeRequestList, TicketTypeRequest.Type.ADULT);
         int childTickets = getNumberOfTicketsByType(ticketTypeRequestList, TicketTypeRequest.Type.CHILD);

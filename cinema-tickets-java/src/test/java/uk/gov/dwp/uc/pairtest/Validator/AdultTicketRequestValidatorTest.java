@@ -1,56 +1,69 @@
 package uk.gov.dwp.uc.pairtest.Validator;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import uk.gov.dwp.uc.pairtest.domain.TicketTypeRequest;
 import uk.gov.dwp.uc.pairtest.exception.InvalidPurchaseException;
 
 import java.util.Arrays;
 import java.util.Collections;
 
-import static uk.gov.dwp.uc.pairtest.data.TicketRequestCreator.getTicketTypeRequestList;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static uk.gov.dwp.uc.pairtest.data.TicketRequestCreator.getTicketTypeRequestArray;
 
 public class AdultTicketRequestValidatorTest {
 
     public TicketRequestValidator adultTicketValidator;
 
-    @Before
-    public void setup() {
+    @BeforeEach
+    void setup() {
         adultTicketValidator = new AdultTicketRequestValidator();
     }
 
     @Test
-    public void testValidateTicketRequestForNoError() {
-        adultTicketValidator.validateTicketRequest(getTicketTypeRequestList());
+    void testValidateTicketRequestForNoError() {
+        adultTicketValidator.validateTicketRequest(Arrays.asList(getTicketTypeRequestArray()));
     }
 
-    @Test(expected = InvalidPurchaseException.class)
-    public void testValidateTicketRequestWithChildOnlyError() {
-        adultTicketValidator.validateTicketRequest(
-                Collections.singletonList(new TicketTypeRequest(TicketTypeRequest.Type.CHILD, 10)));
+    @Test
+    void testValidateTicketRequestWithChildOnlyError() {
+        InvalidPurchaseException exception =
+                Assertions.assertThrows(InvalidPurchaseException.class,
+                        () -> adultTicketValidator.validateTicketRequest(
+                                Collections.singletonList(new TicketTypeRequest(TicketTypeRequest.Type.CHILD, 10))));
+        assertEquals("Accompanying Adults are needed for infants and children", exception.getMessage());
     }
 
-    @Test(expected = InvalidPurchaseException.class)
-    public void testValidateTicketRequestWithInfantOnlyError() {
-        adultTicketValidator.validateTicketRequest(
-                Collections.singletonList(new TicketTypeRequest(TicketTypeRequest.Type.INFANT, 5)));
+    @Test
+    void testValidateTicketRequestWithInfantOnlyError() {
+        InvalidPurchaseException exception =
+                Assertions.assertThrows(InvalidPurchaseException.class,
+                        () -> adultTicketValidator.validateTicketRequest(
+                                Collections.singletonList(new TicketTypeRequest(TicketTypeRequest.Type.INFANT, 5))));
+        assertEquals("Accompanying Adults are needed for infants and children", exception.getMessage());
     }
 
-    @Test(expected = InvalidPurchaseException.class)
+    @Test
     public void testValidateTicketRequestWithNoAdultError() {
-        adultTicketValidator.validateTicketRequest(
-                Arrays.asList(
-                        new TicketTypeRequest(TicketTypeRequest.Type.INFANT, 5),
-                        new TicketTypeRequest(TicketTypeRequest.Type.CHILD, 4)));
+        InvalidPurchaseException exception =
+                Assertions.assertThrows(InvalidPurchaseException.class,
+                        () -> adultTicketValidator.validateTicketRequest(
+                                Arrays.asList(
+                                        new TicketTypeRequest(TicketTypeRequest.Type.INFANT, 5),
+                                        new TicketTypeRequest(TicketTypeRequest.Type.CHILD, 4))));
+        assertEquals("Accompanying Adults are needed for infants and children", exception.getMessage());
     }
 
-    @Test(expected = InvalidPurchaseException.class)
+    @Test
     public void testValidateTicketRequestWithLessAdultError() {
-        adultTicketValidator.validateTicketRequest(
-                Arrays.asList(
-                        new TicketTypeRequest(TicketTypeRequest.Type.ADULT, 1),
-                        new TicketTypeRequest(TicketTypeRequest.Type.INFANT, 5),
-                        new TicketTypeRequest(TicketTypeRequest.Type.CHILD, 4)));
+        InvalidPurchaseException exception =
+                Assertions.assertThrows(InvalidPurchaseException.class,
+                        () -> adultTicketValidator.validateTicketRequest(
+                                Arrays.asList(
+                                        new TicketTypeRequest(TicketTypeRequest.Type.ADULT, 1),
+                                        new TicketTypeRequest(TicketTypeRequest.Type.INFANT, 5),
+                                        new TicketTypeRequest(TicketTypeRequest.Type.CHILD, 4))));
+        assertEquals("Accompanying Adults are needed for infants and children", exception.getMessage());
     }
-
 }

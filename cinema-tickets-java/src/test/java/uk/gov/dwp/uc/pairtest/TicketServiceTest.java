@@ -1,12 +1,10 @@
 package uk.gov.dwp.uc.pairtest;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.*;
+import org.mockito.junit.jupiter.MockitoExtension;
 import thirdparty.paymentgateway.TicketPaymentService;
 import thirdparty.seatbooking.SeatReservationService;
 import uk.gov.dwp.uc.pairtest.Validator.AdultTicketRequestValidator;
@@ -15,15 +13,17 @@ import uk.gov.dwp.uc.pairtest.exception.InvalidPurchaseException;
 
 import java.util.Arrays;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static uk.gov.dwp.uc.pairtest.data.TicketRequestCreator.getTicketTypeRequestArray;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class TicketServiceTest {
 
     @InjectMocks
-    TicketServiceImpl ticketService;
+    private TicketServiceImpl ticketService;
 
     @Mock
     TicketPaymentService ticketPaymentService;
@@ -37,14 +37,20 @@ public class TicketServiceTest {
     @Mock
     TotalTicketsRequestValidator totalTicketsRequestValidator;
 
+    @Captor
+    ArgumentCaptor<Integer> totalCostCaptor;
 
-    @Before
-    public void setup() {
+    @Captor
+    ArgumentCaptor<Integer> totalSeatsCaptor;
+
+
+    @BeforeEach
+    void setup() {
         ticketService = new TicketServiceImpl(ticketPaymentService, seatReservationService, Arrays.asList(adultTicketRequestValidator, totalTicketsRequestValidator));
     }
 
     @Test
-    public void testPurchaseTickets() {
+    void testPurchaseTickets() {
         doNothing().when(adultTicketRequestValidator).validateTicketRequest(anyList());
         doNothing().when(totalTicketsRequestValidator).validateTicketRequest(anyList());
         doNothing().when(ticketPaymentService).makePayment(anyLong(), anyInt());
@@ -52,27 +58,31 @@ public class TicketServiceTest {
 
         ticketService.purchaseTickets(1L, getTicketTypeRequestArray());
 
-        Mockito.verify(adultTicketRequestValidator, times(1)).validateTicketRequest(anyList());
-        Mockito.verify(totalTicketsRequestValidator, times(1)).validateTicketRequest(anyList());
-        Mockito.verify(ticketPaymentService, times(1)).makePayment(anyLong(), anyInt());
-        Mockito.verify(seatReservationService, times(1)).reserveSeat(anyLong(), anyInt());
+        verify(adultTicketRequestValidator, times(1)).validateTicketRequest(anyList());
+        verify(totalTicketsRequestValidator, times(1)).validateTicketRequest(anyList());
+        verify(ticketPaymentService, times(1)).makePayment(anyLong(), totalCostCaptor.capture());
+        assertEquals(300, totalCostCaptor.getValue());
+        verify(seatReservationService, times(1)).reserveSeat(anyLong(), totalSeatsCaptor.capture());
+        assertEquals(14, totalSeatsCaptor.getValue());
     }
 
-    @Test(expected = InvalidPurchaseException.class)
-    public void testPurchaseTicketsForExceedingTicketCountError() {
+    @Test
+    void testPurchaseTicketsForExceedingTicketCountError() {
         doThrow(InvalidPurchaseException.class).when(totalTicketsRequestValidator).validateTicketRequest(anyList());
 
-        ticketService.purchaseTickets(1L, getTicketTypeRequestArray());
+        assertThrows(InvalidPurchaseException.class,
+                () -> ticketService.purchaseTickets(1L, getTicketTypeRequestArray()));
 
         verifyNoMoreInteractions(ticketPaymentService);
         verifyNoMoreInteractions(seatReservationService);
     }
 
-    @Test(expected = InvalidPurchaseException.class)
-    public void testPurchaseTicketsForNoAdultError() {
+    @Test
+    void testPurchaseTicketsForNoAdultError() {
         doThrow(InvalidPurchaseException.class).when(adultTicketRequestValidator).validateTicketRequest(anyList());
 
-        ticketService.purchaseTickets(1L, getTicketTypeRequestArray());
+        assertThrows(InvalidPurchaseException.class,
+                () -> ticketService.purchaseTickets(1L, getTicketTypeRequestArray()));
 
         verifyNoMoreInteractions(ticketPaymentService);
         verifyNoMoreInteractions(seatReservationService);
