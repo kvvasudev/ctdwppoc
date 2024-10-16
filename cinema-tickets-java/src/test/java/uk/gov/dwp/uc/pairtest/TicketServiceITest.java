@@ -14,7 +14,7 @@ import java.util.Arrays;
 
 import static uk.gov.dwp.uc.pairtest.data.TicketRequestCreator.getTicketTypeRequestArray;
 
-public class TicketServiceImplTest {
+public class TicketServiceITest {
 
     public TicketServiceImpl ticketService;
 
